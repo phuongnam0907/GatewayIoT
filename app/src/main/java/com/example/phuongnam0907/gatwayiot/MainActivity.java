@@ -4,11 +4,18 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.example.phuongnam0907.gatwayiot.MVVM.VM.NPNHomeViewModel;
+import com.example.phuongnam0907.gatwayiot.MVVM.View.NPNHomeView;
 import com.google.android.things.pio.PeripheralManager;
 import com.google.android.things.pio.UartDevice;
 import com.google.android.things.pio.UartDeviceCallback;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -30,17 +37,23 @@ import java.util.List;
  *
  * @see <a href="https://github.com/androidthings/contrib-drivers#readme">https://github.com/androidthings/contrib-drivers#readme</a>
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements NPNHomeView {
     private UartDevice uartDevice;
     private static final String UART_DEVICE_NAME = "UART0";
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private String result ="";
 
+    private static final String url = "192.168.0.10/";
+
+    private NPNHomeViewModel mHomeViewModel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mHomeViewModel = new NPNHomeViewModel();
+        mHomeViewModel.attach(this, this);
 
         try {
             PeripheralManager manager = PeripheralManager.getInstance();
@@ -122,6 +135,12 @@ public class MainActivity extends Activity {
             Float value = Float.parseFloat(String.valueOf(valueInt))*100/1024;
             result = "id=" + Integer.toString(buffer[0]) + "&des=" + Integer.toString(buffer[1]) + "&val=" + value + "%";
             Log.d("Result from sensor", result);
+            updateData(Integer.toString(buffer[0]),Integer.toString(buffer[1]),value);
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
     }
@@ -134,4 +153,47 @@ public class MainActivity extends Activity {
         uart.setStopBits(1);
     }
 
+    private void updateData(final String gateway, final String sensor, final Float value){
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    Date date = new Date();
+                    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-ddaHH:mm:s");
+                    String newDate = format.format(date);
+                    Details details = new Details(gateway, newDate, new SensorData(sensor,value));
+
+                    URL url = new URL("192.168.0.12/");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
+                    conn.setRequestProperty("Accept","application/json");
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+
+                    DataOutputStream os = new DataOutputStream(conn.getOutputStream());
+
+                    os.writeBytes(details.toString());
+
+                    os.flush();
+                    os.close();
+
+                    conn.disconnect();
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+    }
+
+    @Override
+    public void onSuccessUpdateServer(String message) {
+
+    }
+
+    @Override
+    public void onErrorUpdateServer(String message) {
+
+    }
 }
