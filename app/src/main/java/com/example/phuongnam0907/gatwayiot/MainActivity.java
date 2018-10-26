@@ -116,23 +116,12 @@ public class MainActivity extends Activity {
         byte[] buffer = new byte[maxCount];
 
         int count;
-        while ((count = uart.read(buffer, buffer.length)) > 0) {
-            //Log.d(TAG, "Read " + count + " bytes from peripheral");
-            String str = new String(buffer, "UTF-8"); // chuyen du lieu tu byte sang String
-            String c = str.substring(0, count); // xu ly du lieu cho dung chuan
+        while ((count = uart.read(buffer, buffer.length)) > 3) {
             Log.d(TAG, "Read " + count + " bytes from peripheral");
             Integer valueInt = (buffer[2]<<8&0xFF00) ^ (buffer[3]&0x00FF);
-            //for (int i = 0; i< 4; i++) Log.d(TAG,Integer.toString(buffer[i]));
-            //if (valueInt < 0) valueInt += 1280;
             Float value = Float.parseFloat(String.valueOf(valueInt))*100/1024;
             result = "id=" + Integer.toString(buffer[0]) + "&des=" + Integer.toString(buffer[1]) + "&val=" + value + "%";
             Log.d("Result from sensor", result);
-            //for(int i = 0; i< count; i++) Log.d(TAG,Integer.toString(buffer[i]));
-            /*result += c;
-            if (result.indexOf("%") > 4) {
-                Log.d(TAG, "Read data from sensor: " + result);
-                result = "";
-            }*/
         }
 
     }
