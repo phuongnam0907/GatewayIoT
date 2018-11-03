@@ -7,6 +7,8 @@ public class Details {
     private String mGateway;
     private String mTime;
     private SensorData mSensor;
+    private SensorData[] mArray;
+    private int length = -1;
 
     public Details(String idgateway, String time, SensorData sensor){
         mGateway = idgateway;
@@ -14,6 +16,12 @@ public class Details {
         mSensor = sensor;
     }
 
+    public  Details(String idgateway, String time, SensorData[] sensorData){
+        mGateway = idgateway;
+        mTime = time;
+        mArray = sensorData;
+        length = sensorData.length;
+    }
     public String getmGateway() {
         return mGateway;
     }
@@ -25,6 +33,8 @@ public class Details {
     public SensorData getmSensor() {
         return mSensor;
     }
+
+    public SensorData[] getmArray() { return mArray; }
 
     public void setmGateway(String mGateway) {
         this.mGateway = mGateway;
@@ -38,6 +48,10 @@ public class Details {
         this.mSensor = mSensor;
     }
 
+    public void setmArray(SensorData[] mArray) {
+        this.mArray = mArray;
+    }
+
     @Override
     public String toString(){
         JSONObject jsonGateway = new JSONObject();
@@ -46,10 +60,19 @@ public class Details {
             jsonGateway.put("gateway",mGateway);
             jsonGateway.put("time",mTime);
 
-            jsonData.put("id",mSensor.getmId());
-            jsonData.put("value",mSensor.getmValue());
+            if (length <= 0){
+                jsonData.put("id",mSensor.getmId());
+                jsonData.put("value",mSensor.getmValue());
 
-            jsonGateway.put("sensor",mSensor);
+                jsonGateway.put("sensor",mSensor);
+            } else {
+                for (int j = 0; j < length; j++){
+                    jsonData.put("id+" + j,mSensor.getmId());
+                    jsonData.put("value+" + j,mSensor.getmValue());
+
+                    jsonGateway.put("sensor+" + j,mSensor);
+                }
+            }
 
 
         } catch (JSONException e) {

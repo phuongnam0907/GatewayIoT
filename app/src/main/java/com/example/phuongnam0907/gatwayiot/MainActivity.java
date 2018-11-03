@@ -1,6 +1,8 @@
 package com.example.phuongnam0907.gatwayiot;
 
 import android.app.Activity;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -14,9 +16,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Skeleton of an Android Things activity.
@@ -42,7 +47,10 @@ public class MainActivity extends Activity implements NPNHomeView {
     private static final String UART_DEVICE_NAME = "UART0";
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private String result ="";
+
+    private String header_1 ="{\"idGateway\":\"1\",\"sensor\":[";
+    private String result = header_1;
+    Timer updateTimer;
 
     private static final String url = "192.168.0.10/";
 
@@ -91,6 +99,7 @@ public class MainActivity extends Activity implements NPNHomeView {
         // Begin listening for interrupt events
         try {
             uartDevice.registerUartDeviceCallback(mUartCallback);
+            updatetimer();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -133,9 +142,11 @@ public class MainActivity extends Activity implements NPNHomeView {
             Log.d(TAG, "Read " + count + " bytes from peripheral");
             Integer valueInt = (buffer[2]<<8&0xFF00) ^ (buffer[3]&0x00FF);
             Float value = Float.parseFloat(String.valueOf(valueInt))*100/1024;
-            result = "id=" + Integer.toString(buffer[0]) + "&des=" + Integer.toString(buffer[1]) + "&val=" + value + "%";
-            Log.d("Result from sensor", result);
-            updateData(Integer.toString(buffer[0]),Integer.toString(buffer[1]),value);
+            String temp = "id=" + Integer.toString(buffer[0]) + "&des=" + Integer.toString(buffer[1]) + "&val=" + value + "%";
+            Log.d("Result from sensor", temp);
+            DecimalFormat df = new DecimalFormat("0.00");
+            result += "{\"id\": \""+ Integer.toString(buffer[0]) +"\",\"value\": \""+ df.format(value)+"\"},";
+            //updateData(Integer.toString(buffer[0]),Integer.toString(buffer[1]),value);
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
@@ -153,7 +164,44 @@ public class MainActivity extends Activity implements NPNHomeView {
         uart.setStopBits(1);
     }
 
-    private void updateData(final String gateway, final String sensor, final Float value){
+    public void connectWifi(){
+        String txtUserName = "UTS_709_IOT";
+        String txtPassWord = "ust709iot";
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.SSID = String.format("\"%s\"", txtUserName);
+        wifiConfig.preSharedKey = String.format("\"%s\"", txtPassWord);
+
+        //txtConsole.setText("Connecting...");
+        Log.d("WifiServer: ","Connecting to Network");
+
+        WifiManager wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
+        //remember id
+        int netId = wifiManager.addNetwork(wifiConfig);
+        wifiManager.disconnect();
+        wifiManager.enableNetwork(netId, true);
+        wifiManager.reconnect();
+        Log.d("WifiServer: ","Connected to Network");
+        //txtConsole.setText("Connected!!!!");
+    }
+
+    public void updatetimer(){
+        updateTimer = new Timer();
+        TimerTask update = new TimerTask() {
+            @Override
+            public void run() {
+
+                MainActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateData();
+                    }
+                });
+            }
+        };
+        updateTimer.schedule(update,10000,1000);
+    }
+
+    private void updateData(){
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -161,8 +209,11 @@ public class MainActivity extends Activity implements NPNHomeView {
                     Date date = new Date();
                     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-ddaHH:mm:s");
                     String newDate = format.format(date);
-                    Details details = new Details(gateway, newDate, new SensorData(sensor,value));
-
+                    //Details details = new Details(gateway, newDate, new SensorData(sensor,value));
+                    if (result.charAt(result.length()-1)==','){
+                        result = result.replace(result.substring(result.length()-1), "");
+                    }
+                    result += "],\"time\":\"" + newDate + "\"}";
                     URL url = new URL("192.168.0.12/");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
@@ -173,12 +224,15 @@ public class MainActivity extends Activity implements NPNHomeView {
 
                     DataOutputStream os = new DataOutputStream(conn.getOutputStream());
 
-                    os.writeBytes(details.toString());
+                    os.writeBytes(result);
 
                     os.flush();
                     os.close();
 
                     conn.disconnect();
+
+                    result = "";
+                    result = header_1;
                 }catch (Exception e) {
                     e.printStackTrace();
                 }
