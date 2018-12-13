@@ -155,7 +155,7 @@ public class MainActivity extends Activity implements NPNHomeView {
             Float value = Float.parseFloat(String.valueOf(valueInt))*100/1024;
             String temp = "id=" + Integer.toString(buffer[0]) + "&des=" + Integer.toString(buffer[1]) + "&val=" + value + "%";
             Log.d("Result from sensor", temp);
-            DecimalFormat df = new DecimalFormat("0.000");
+            DecimalFormat df = new DecimalFormat("0.00000");
             result += "{\"id\": \""+ Integer.toString(buffer[0]-1) +"\",\"value\": "+ df.format(value)+"},";
             try {
                 Thread.sleep(2000);
@@ -208,7 +208,7 @@ public class MainActivity extends Activity implements NPNHomeView {
                 });
             }
         };
-        updateTimer.schedule(update,10000,10000);
+        updateTimer.schedule(update,10000,60000);
     }
 
     private void updateData(){
