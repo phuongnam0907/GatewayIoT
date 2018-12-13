@@ -58,7 +58,7 @@ public class MainActivity extends Activity implements NPNHomeView {
     private static final String TAG = MainActivity.class.getSimpleName();
 
 
-    private String header_1 ="{\"idGateway\":\"2\",\"sensor\":[";
+    private String header_1 ="[{\"gateway\":\"1\",\"sensor\":[";
     private String result = header_1;
     Timer updateTimer;
     Timestamp timestamp;
@@ -156,7 +156,7 @@ public class MainActivity extends Activity implements NPNHomeView {
             String temp = "id=" + Integer.toString(buffer[0]) + "&des=" + Integer.toString(buffer[1]) + "&val=" + value + "%";
             Log.d("Result from sensor", temp);
             DecimalFormat df = new DecimalFormat("0.000");
-            result += "{\"id\": \""+ Integer.toString(buffer[0]) +"\",\"value\": "+ df.format(value)+"},";
+            result += "{\"id\": \""+ Integer.toString(buffer[0]-1) +"\",\"value\": "+ df.format(value)+"},";
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
@@ -203,26 +203,12 @@ public class MainActivity extends Activity implements NPNHomeView {
                 MainActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        String display = "IP Address: " + Ultis.getWifiIPAddress(MainActivity.this);
-
-                        if(Ultis.checkWifiConnected(MainActivity.this) == true)
-                        {
-                            display += " Wifi connected";
-                        }
-                        else if(Ultis.checkLanConnected(MainActivity.this) == true){
-                            display += " Ethernet connected";
-                        }
-                        else
-                        {
-                            display += " No connection";
-                            connectWifi();
-                        }
                         updateData();
                     }
                 });
             }
         };
-        updateTimer.schedule(update,10000,60000);
+        updateTimer.schedule(update,10000,10000);
     }
 
     private void updateData(){
@@ -232,10 +218,11 @@ public class MainActivity extends Activity implements NPNHomeView {
                 try{
                     Date date = new Date();
                     result = result.substring(0,result.length()-1);
-                    result += "],\"time\":" + date.getTime() + "}";
+                    result += "],\"time\":" + date.getTime()/1000 + "}]";
 
                     //URL url = new URL("https://studytutorial.in/post.php");
-                    URL url = new URL("http://192.168.1.12:80/server/data.php");
+//                    URL url = new URL("http://192.168.1.12:80/server/data.php");
+                    URL url = new URL("http://192.168.1.100:80/assignment/backend/data.php");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
@@ -261,7 +248,7 @@ public class MainActivity extends Activity implements NPNHomeView {
                     }
 
                     in.close();
-                    Log.d("phuongnam0907 response: ",sb.toString());
+                    Log.d("phuongnam0907 response",sb.toString());
 
                     conn.disconnect();
 
