@@ -63,7 +63,7 @@ public class MainActivity extends Activity implements NPNHomeView {
     Timer updateTimer;
     Timestamp timestamp;
 
-    private static final String url = "192.168.0.10/";
+    private static final String url = "192.168.1.100/";
 
     private NPNHomeViewModel mHomeViewModel;
 
@@ -208,7 +208,7 @@ public class MainActivity extends Activity implements NPNHomeView {
                 });
             }
         };
-        updateTimer.schedule(update,10000,60000);
+        updateTimer.schedule(update,10000,15000);
     }
 
     private void updateData(){
@@ -222,7 +222,7 @@ public class MainActivity extends Activity implements NPNHomeView {
 
                     //URL url = new URL("https://studytutorial.in/post.php");
 //                    URL url = new URL("http://192.168.1.12:80/server/data.php");
-                    URL url = new URL("http://192.168.1.100:80/assignment/backend/data.php");
+                    URL url = new URL("http://192.168.1.100:80/backend/data.php");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
